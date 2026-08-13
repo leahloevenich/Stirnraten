@@ -64,6 +64,20 @@ struct LandscapeDashboardView: View {
     }
 }
 
+extension Color {   //entgegengesetze Farbe Text->Hintergrund
+    func contrastingTextColor() -> Color {
+        let uiColor = UIColor(self)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        
+        let luminance = 0.299 * red + 0.587 * green + 0.114 * blue
+        return luminance > 0.6 ? .black : .white
+    }
+}
+
 // Wiederverwendbare Karte für Kennzahlen
 struct CatCard: View {
     let title: String   // kat name
@@ -74,7 +88,7 @@ struct CatCard: View {
         VStack(alignment: .center, spacing: 6) {
             Text(title)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(color.contrastingTextColor())
                 .multilineTextAlignment(.center)
         }
         .padding()

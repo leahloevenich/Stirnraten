@@ -32,6 +32,13 @@ struct GameView: View {
     // usedwords and which were skipped and correct
     @State public var usedWords: [String] = []
     @State public var correctIndices: [Int] = []
+    
+    @State private var feedbackType: FeedbackType? = nil
+       
+       enum FeedbackType {
+           case correct
+           case incorrect
+       }
 
     var body: some View {
         NavigationStack {
@@ -58,6 +65,7 @@ struct GameView: View {
                 .background(selectedCategory.color)
                 .clipShape(RoundedRectangle(cornerRadius: 20))
             }
+            
             .padding()
             .onAppear() {
                 UINotificationFeedbackGenerator().notificationOccurred(.warning)
