@@ -34,64 +34,71 @@ struct GameView: View {
     @State public var correctIndices: [Int] = []
     
     @State private var feedbackType: FeedbackType? = nil
-       
-       enum FeedbackType {
-           case correct
-           case incorrect
-       }
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                // 1. Full-screen background color
-                //selectedCategory.color
-                //    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                //    .ignoresSafeArea()
-                
-                // 2. Your content on top
-                VStack(spacing: 30) {
-                    Text("Verbleibende Zeit")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    
-                    Text(timeString(from: timeRemaining))
-                        .font(.system(size: 60, weight: .bold, design: .monospaced))
-                        .contentTransition(.numericText())
-                    
-                    Text(currentWord)
-                        .font(.largeTitle)
-                }
-                .padding()
-                .background(selectedCategory.color)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-            }
-            
-            .padding()
-            .onAppear() {
-                UINotificationFeedbackGenerator().notificationOccurred(.warning)
-                if (currentWord.isEmpty) {
-                    randomWord()
-                }
-                startTiltDetection()
-            }
-            // Empfange das Timer-Signal jede Sekunde
-            .onReceive(timer) { _ in
-                if timeRemaining > 0 {
-                    timeRemaining -= 1
-                } else {
-                    isFinished = true
-                }
-            }
-            .onDisappear() {
-                stopTiltDetection()
-                UINotificationFeedbackGenerator().notificationOccurred(.warning)
-            }
-            // Navigation zur neuen View, sobald der Timer abgelaufen ist
-            .navigationDestination(isPresented: $isFinished) {
-                EndView(usedWords: usedWords, correctIndices: correctIndices)            }
-        }
-        .navigationBarBackButtonHidden(false) // Verhindert Zurückgehen, falls nicht gewünscht
+    
+    enum FeedbackType {
+        case correct
+        case incorrect
     }
+    
+    @State private var flashColor: Color? = nil
+    
+    var body: some View {
+        selectedCategory.color.opacity(0.5)
+            .ignoresSafeArea()
+            .overlay {
+                NavigationStack {
+                    ZStack {
+                        // 2. Your content on top
+                        VStack(spacing: 30) {
+                            Text("Verbleibende Zeit")
+                                .font(.headline)
+                                .foregroundStyle(.secondary)
+                            
+                            Text(timeString(from: timeRemaining))
+                                .font(.system(size: 60, weight: .bold, design: .monospaced))
+                                .contentTransition(.numericText())
+                            
+                            Text(currentWord)
+                                .font(.largeTitle)
+                        }
+                        .padding()
+                        .background(selectedCategory.color)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        
+                        if let flashColor = flashColor {
+                            flashColor
+                                .ignoresSafeArea()
+                        }
+                    }
+                    .padding()
+                    .onAppear() {
+                        UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                        if (currentWord.isEmpty) {
+                            randomWord()
+                        }
+                        startTiltDetection()
+                    }
+                    // Empfange das Timer-Signal jede Sekunde
+                    .onReceive(timer) { _ in
+                        if timeRemaining > 0 {
+                            timeRemaining -= 1
+                        } else {
+                            isFinished = true
+                        }
+                    }
+                    .onDisappear() {
+                        stopTiltDetection()
+                        UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                    }
+                    // Navigation zur neuen View, sobald der Timer abgelaufen ist
+                    .navigationDestination(isPresented: $isFinished) {
+                        EndView(usedWords: usedWords, correctIndices: correctIndices)            }
+                }
+                .navigationBarBackButtonHidden(false) // Verhindert Zurückgehen, falls nicht gewünscht
+            }
+        
+    }
+    
     
     // Hilfsfunktion zur Formatierung der Sekunden in MM:SS
     private func timeString(from totalSeconds: Int) -> String {
@@ -113,7 +120,7 @@ struct GameView: View {
     
     private func startTiltDetection() {
         guard motionManager.isDeviceMotionAvailable else { return }
-
+        
         motionManager.deviceMotionUpdateInterval = 0.1
         motionManager.startDeviceMotionUpdates(to: .main) { motion, error in
             guard let motion = motion else { return }
@@ -125,17 +132,19 @@ struct GameView: View {
             
             // 2. Ignore motion updates if we're currently in a cooldown period
             guard !isTiltCoolingDown else { return }
-
+            
             let roll = motion.attitude.roll
             print("roll", roll)
             print("first", startTilt)
-
+            
             if roll > (startTilt+tiltThreshold) {
+                handleSuccess()
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
                 print("Nach rechts gekippt")
                 correctIndices.append(0)
                 handleTilt()
             } else if roll < (startTilt-tiltThreshold) {
+                handleFailure()
                 UINotificationFeedbackGenerator().notificationOccurred(.error)
                 print("Nach links gekippt")
                 correctIndices.append(1)
@@ -143,7 +152,7 @@ struct GameView: View {
             }
         }
     }
-
+    
     private func stopTiltDetection() {
         motionManager.stopDeviceMotionUpdates()
     }
@@ -152,11 +161,45 @@ struct GameView: View {
     private func handleTilt() {
         isTiltCoolingDown = true
         randomWord()
-
+        
         // Wait 1 second on a background Task, then reset the flag
         Task {
             try? await Task.sleep(for: .seconds(1))
             isTiltCoolingDown = false
+        }
+    }
+    
+    private func handleSuccess() {
+        // haptisches feedback für player
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        
+        // animation for explainer
+        withAnimation(.easeIn(duration: 0.1)) {
+            flashColor = Color.green
+        }
+        
+        Task {
+            try? await Task.sleep(for: .seconds(0.5))
+            withAnimation(.easeOut(duration: 0.3)) {
+                flashColor = nil
+            }
+        }
+    }
+    
+    private func handleFailure() {
+        // haptisches feedback für player
+        UINotificationFeedbackGenerator().notificationOccurred(.error)
+        
+        // animation for explainer
+        withAnimation(.easeIn(duration: 0.1)) {
+            flashColor = Color.red
+        }
+        
+        Task {
+            try? await Task.sleep(for: .seconds(0.5))
+            withAnimation(.easeOut(duration: 0.3)) {
+                flashColor = nil
+            }
         }
     }
 }
