@@ -178,12 +178,13 @@ struct GameView: View {
         isTiltCoolingDown = true
 
         Task {
-            // Erst das Feedback vollständig anzeigen und danach den Begriff wechseln.
-            try? await Task.sleep(for: .seconds(0.9))
+            // Das Feedback ist nach 0,5 Sekunden Anzeige und 0,3 Sekunden
+            // Ausblendanimation vollständig beendet. Direkt danach wechseln.
+            try? await Task.sleep(for: .seconds(0.8))
             randomWord()
 
             // Die gesamte Sperrzeit bleibt bei einer Sekunde.
-            try? await Task.sleep(for: .seconds(0.1))
+            try? await Task.sleep(for: .seconds(0.2))
             isTiltCoolingDown = false
         }
     }
