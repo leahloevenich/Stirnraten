@@ -113,7 +113,6 @@ struct GameView: View {
         flashColor = nil
         isTiltCoolingDown = false
         firstMeasure = true
-        isFinished = false
     }
 
     // Hilfsfunktion zur Formatierung der Sekunden in MM:SS
@@ -207,6 +206,7 @@ struct EndView: View {
     let correctIndices: [Int]
     let onRepeat: () -> Void
 
+    @Environment(\.dismiss) private var dismiss
     @State private var countCorrect = 0
     @State private var countAll = 0
     
@@ -236,6 +236,7 @@ struct EndView: View {
 
             Button {
                 onRepeat()
+                dismiss()
             } label: {
                 Label("Runde wiederholen", systemImage: "arrow.counterclockwise")
                     .font(.headline)
