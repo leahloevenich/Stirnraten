@@ -52,7 +52,6 @@ struct GameView: View {
                         VStack(spacing: 30) {
                             Text("Verbleibende Zeit")
                                 .font(.headline)
-                                .foregroundStyle(.secondary)
                             
                             Text(timeString(from: timeRemaining))
                                 .font(.system(size: 60, weight: .bold, design: .monospaced))
@@ -62,6 +61,7 @@ struct GameView: View {
                                 .font(.largeTitle)
                         }
                         .padding()
+                        .foregroundStyle(selectedCategory.color.contrastingTextColor())
                         .background(selectedCategory.color)
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                         
@@ -160,11 +160,14 @@ struct GameView: View {
     // 3. Centralized tilt handler with a non-blocking delay
     private func handleTilt() {
         isTiltCoolingDown = true
-        randomWord()
-        
-        // Wait 1 second on a background Task, then reset the flag
+
         Task {
-            try? await Task.sleep(for: .seconds(1))
+            // Erst das Feedback vollständig anzeigen und danach den Begriff wechseln.
+            try? await Task.sleep(for: .seconds(0.9))
+            randomWord()
+
+            // Die gesamte Sperrzeit bleibt bei einer Sekunde.
+            try? await Task.sleep(for: .seconds(0.1))
             isTiltCoolingDown = false
         }
     }

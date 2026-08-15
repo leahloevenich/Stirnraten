@@ -1,0 +1,9 @@
+name: {{.ProjectName}}
+
+services:
+  {{.ProjectName}}:
+    build:
+      context: .
+    image: orca-{{.ProjectName}}
+    container_name: {{.ProjectName}}
+    working_dir: /workspace

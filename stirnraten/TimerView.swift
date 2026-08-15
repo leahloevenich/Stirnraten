@@ -28,7 +28,6 @@ struct TimerView: View {
                 VStack(spacing: 30) {
                     Text("Get Ready!")
                         .font(.headline)
-                        .foregroundStyle(.secondary)
                     
                     Text(timeString(from: timeRemaining))
                         .font(.system(size: 60, weight: .bold, design: .monospaced))
@@ -38,6 +37,7 @@ struct TimerView: View {
                         .font(.largeTitle)
                 }
                 .padding()
+                .foregroundStyle(selectedCategory.color.contrastingTextColor())
                 .background(selectedCategory.color)
                 .clipShape(RoundedRectangle(cornerRadius: 20))
             }

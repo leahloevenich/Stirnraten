@@ -1,0 +1,11 @@
+{
+  "project_name": "stirnraten",
+  "exclude_patterns": [
+    "node_modules/",
+    "target/",
+    ".cache/",
+    "vendor/",
+    "dist/",
+    "build/"
+  ]
+}
