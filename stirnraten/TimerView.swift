@@ -9,55 +9,58 @@ import SwiftUI
 import Combine
 
 struct TimerView: View {
-    let selectedCategory: Category // Nimmt die gewählte Kategorie entgegen
-    @State private var timeRemaining = 3 // 1 Minute in Sekunden
+    let selectedCategory: Category
+    @State private var contrastingColor: Color = .black
+    @State private var timeRemaining = 3 //sekunden
     @State private var isFinished = false
     
     // Timer initialisieren, der jede Sekunde feuert
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                // 1. Full-screen background color
-                //selectedCategory.color
-                //    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                //    .ignoresSafeArea()
-                
-                // 2. Your content on top
-                VStack(spacing: 30) {
-                    Text("Get Ready!")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
+        selectedCategory.color.opacity(1)
+            .ignoresSafeArea()
+            .overlay {
+                NavigationStack {
+                    ZStack {
+                        VStack(spacing: 30) {
+                            Text("Get Ready!")
+                                .font(.headline)
+                                .foregroundStyle(contrastingColor.opacity(0.7))
+                            
+                            Text(timeString(from: timeRemaining))
+                                .font(.system(size: 60, weight: .bold, design: .monospaced))
+                                .contentTransition(.numericText())
+                                .foregroundStyle(contrastingColor)
+                            
+                            Text(selectedCategory.title)
+                                .font(.largeTitle)
+                                .foregroundStyle(contrastingColor)
+                        }
+                        .padding()
+                    }
+                    .padding()
                     
-                    Text(timeString(from: timeRemaining))
-                        .font(.system(size: 60, weight: .bold, design: .monospaced))
-                        .contentTransition(.numericText())
+                    .onAppear() {
+                        contrastingColor = selectedCategory.color.contrastingTextColor()
+                    }
                     
-                    Text(selectedCategory.title)
-                        .font(.largeTitle)
+                    // Empfange das Timer-Signal jede Sekunde
+                    .onReceive(timer) { _ in
+                        if timeRemaining > 0 {
+                            timeRemaining -= 1
+                        } else {
+                            isFinished = true
+                        }
+                    }
+                    
+                    // Navigation zur neuen View, sobald der Timer abgelaufen ist
+                    .navigationDestination(isPresented: $isFinished) {
+                        GameView(selectedCategory: selectedCategory)
+                    }
                 }
-                .padding()
-                .background(selectedCategory.color)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .navigationBarBackButtonHidden(false) // Verhindert Zurückgehen, falls nicht gewünscht
             }
-            .padding()
-
-            // Empfange das Timer-Signal jede Sekunde
-            .onReceive(timer) { _ in
-                if timeRemaining > 0 {
-                    timeRemaining -= 1
-                } else {
-                    isFinished = true
-                }
-            }
-
-            // Navigation zur neuen View, sobald der Timer abgelaufen ist
-            .navigationDestination(isPresented: $isFinished) {
-                GameView(selectedCategory: selectedCategory)
-            }
-        }
-        .navigationBarBackButtonHidden(false) // Verhindert Zurückgehen, falls nicht gewünscht
     }
     
     // Hilfsfunktion zur Formatierung der Sekunden in MM:SS

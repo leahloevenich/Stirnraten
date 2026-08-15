@@ -11,8 +11,8 @@ import Combine
 import CoreMotion
 
 struct GameView: View {
-    let selectedCategory: Category // Nimmt die gewählte Kategorie entgegen
-    @State private var timeRemaining = 60 // 1 Minute in Sekunden
+    let selectedCategory: Category
+    @State private var timeRemaining = 90 // in Sekunden
     @State private var isFinished = false
     
     // word to display
@@ -41,9 +41,10 @@ struct GameView: View {
     }
     
     @State private var flashColor: Color? = nil
+    @State private var backgroundColor: Color? = nil
     
     var body: some View {
-        selectedCategory.color.opacity(0.5)
+        backgroundColor
             .ignoresSafeArea()
             .overlay {
                 NavigationStack {
@@ -62,16 +63,14 @@ struct GameView: View {
                                 .font(.largeTitle)
                         }
                         .padding()
-                        .background(selectedCategory.color)
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
                         
                         if let flashColor = flashColor {
                             flashColor
                                 .ignoresSafeArea()
                         }
                     }
-                    .padding()
                     .onAppear() {
+                        backgroundColor = selectedCategory.color.opacity(1)
                         UINotificationFeedbackGenerator().notificationOccurred(.warning)
                         if (currentWord.isEmpty) {
                             randomWord()
@@ -138,14 +137,12 @@ struct GameView: View {
             print("first", startTilt)
             
             if roll > (startTilt+tiltThreshold) {
-                handleSuccess()
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                handleFailure()
                 print("Nach rechts gekippt")
                 correctIndices.append(0)
                 handleTilt()
             } else if roll < (startTilt-tiltThreshold) {
-                handleFailure()
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                handleSuccess()
                 print("Nach links gekippt")
                 correctIndices.append(1)
                 handleTilt()
@@ -174,13 +171,13 @@ struct GameView: View {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         
         // animation for explainer
-        withAnimation(.easeIn(duration: 0.1)) {
+        withAnimation(.easeIn(duration: 0.2)) {
             flashColor = Color.green
         }
         
         Task {
-            try? await Task.sleep(for: .seconds(0.5))
-            withAnimation(.easeOut(duration: 0.3)) {
+            try? await Task.sleep(for: .seconds(0.4))
+            withAnimation(.easeOut(duration: 0.2)) {
                 flashColor = nil
             }
         }
@@ -191,20 +188,19 @@ struct GameView: View {
         UINotificationFeedbackGenerator().notificationOccurred(.error)
         
         // animation for explainer
-        withAnimation(.easeIn(duration: 0.1)) {
+        withAnimation(.easeIn(duration: 0.2)) {
             flashColor = Color.red
         }
         
         Task {
-            try? await Task.sleep(for: .seconds(0.5))
-            withAnimation(.easeOut(duration: 0.3)) {
+            try? await Task.sleep(for: .seconds(0.4))
+            withAnimation(.easeOut(duration: 0.2)) {
                 flashColor = nil
             }
         }
     }
 }
 
-// Die Ziel-View, die nach 1 Minute erscheint
 struct EndView: View {
     let usedWords: [String]
     let correctIndices: [Int]
