@@ -92,7 +92,12 @@ struct GameView: View {
                     }
                     // Navigation zur neuen View, sobald der Timer abgelaufen ist
                     .navigationDestination(isPresented: $isFinished) {
-                        EndView(usedWords: usedWords, correctIndices: correctIndices)            }
+                        EndView(
+                            usedWords: usedWords,
+                            correctIndices: correctIndices,
+                            onRepeat: restartGame
+                        )
+                    }
                 }
                 .navigationBarBackButtonHidden(false) // Verhindert Zurückgehen, falls nicht gewünscht
             }
@@ -100,6 +105,17 @@ struct GameView: View {
     }
     
     
+    private func restartGame() {
+        timeRemaining = 60
+        currentWord = ""
+        usedWords = []
+        correctIndices = []
+        flashColor = nil
+        isTiltCoolingDown = false
+        firstMeasure = true
+        isFinished = false
+    }
+
     // Hilfsfunktion zur Formatierung der Sekunden in MM:SS
     private func timeString(from totalSeconds: Int) -> String {
         let minutes = totalSeconds / 60
@@ -211,7 +227,8 @@ struct GameView: View {
 struct EndView: View {
     let usedWords: [String]
     let correctIndices: [Int]
-    
+    let onRepeat: () -> Void
+
     @State private var countCorrect = 0
     @State private var countAll = 0
     
@@ -238,6 +255,18 @@ struct EndView: View {
                 }
             }
             .listStyle(.plain) // Optional: changes the visual style of the list
+
+            Button {
+                onRepeat()
+            } label: {
+                Label("Runde wiederholen", systemImage: "arrow.counterclockwise")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal)
+            .padding(.bottom)
         }
         .onAppear() {
             countCorrectWords()
