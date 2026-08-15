@@ -146,22 +146,25 @@ struct GameView: View {
                 startTilt = motion.attitude.roll
             }
             
-            // 2. Ignore motion updates if we're currently in a cooldown period
-            guard !isTiltCoolingDown else { return }
-            
             let roll = motion.attitude.roll
-            print("roll", roll)
-            print("first", startTilt)
-            
-            if roll > (startTilt+tiltThreshold) {
+            let tilt = roll - startTilt
+
+            // Nach einer Antwort bleibt das Ergebnis sichtbar, bis das Gerät
+            // wieder in seine Ausgangsposition gebracht wurde.
+            if isTiltCoolingDown {
+                if abs(tilt) < tiltThreshold * 0.35 {
+                    finishTilt()
+                }
+                return
+            }
+
+            if tilt > tiltThreshold {
                 handleSuccess()
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
                 print("Nach rechts gekippt")
                 correctIndices.append(0)
                 handleTilt()
-            } else if roll < (startTilt-tiltThreshold) {
+            } else if tilt < -tiltThreshold {
                 handleFailure()
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
                 print("Nach links gekippt")
                 correctIndices.append(1)
                 handleTilt()
@@ -173,54 +176,28 @@ struct GameView: View {
         motionManager.stopDeviceMotionUpdates()
     }
     
-    // 3. Centralized tilt handler with a non-blocking delay
     private func handleTilt() {
         isTiltCoolingDown = true
+    }
 
-        Task {
-            // Das Feedback ist nach 0,5 Sekunden Anzeige und 0,3 Sekunden
-            // Ausblendanimation vollständig beendet. Direkt danach wechseln.
-            try? await Task.sleep(for: .seconds(0.8))
-            randomWord()
-
-            // Die gesamte Sperrzeit bleibt bei einer Sekunde.
-            try? await Task.sleep(for: .seconds(0.2))
-            isTiltCoolingDown = false
-        }
+    private func finishTilt() {
+        flashColor = nil
+        randomWord()
+        isTiltCoolingDown = false
     }
     
     private func handleSuccess() {
-        // haptisches feedback für player
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        
-        // animation for explainer
-        withAnimation(.easeIn(duration: 0.1)) {
-            flashColor = Color.green
-        }
-        
-        Task {
-            try? await Task.sleep(for: .seconds(0.5))
-            withAnimation(.easeOut(duration: 0.3)) {
-                flashColor = nil
-            }
-        }
+
+        // Das Ergebnis bleibt sichtbar, bis das Gerät wieder gerade gehalten wird.
+        flashColor = .green
     }
-    
+
     private func handleFailure() {
-        // haptisches feedback für player
         UINotificationFeedbackGenerator().notificationOccurred(.error)
-        
-        // animation for explainer
-        withAnimation(.easeIn(duration: 0.1)) {
-            flashColor = Color.red
-        }
-        
-        Task {
-            try? await Task.sleep(for: .seconds(0.5))
-            withAnimation(.easeOut(duration: 0.3)) {
-                flashColor = nil
-            }
-        }
+
+        // Das Ergebnis bleibt sichtbar, bis das Gerät wieder gerade gehalten wird.
+        flashColor = .red
     }
 }
 
