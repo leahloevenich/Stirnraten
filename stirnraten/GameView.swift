@@ -43,6 +43,8 @@ struct GameView: View {
     @State private var flashColor: Color? = nil
     @State private var backgroundColor: Color? = nil
     
+    @State private var goToMainMenu = false
+    
     var body: some View {
         backgroundColor
             .ignoresSafeArea()
@@ -53,14 +55,16 @@ struct GameView: View {
                         VStack(spacing: 30) {
                             Text("Verbleibende Zeit")
                                 .font(.headline)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(selectedCategory.color.contrastingTextColor())
                             
                             Text(timeString(from: timeRemaining))
                                 .font(.system(size: 60, weight: .bold, design: .monospaced))
                                 .contentTransition(.numericText())
+                                .foregroundStyle(selectedCategory.color.contrastingTextColor())
                             
                             Text(currentWord)
                                 .font(.largeTitle)
+                                .foregroundStyle(selectedCategory.color.contrastingTextColor())
                         }
                         .padding()
                         
@@ -89,13 +93,44 @@ struct GameView: View {
                         stopTiltDetection()
                         UINotificationFeedbackGenerator().notificationOccurred(.warning)
                     }
-                    // Navigation zur neuen View, sobald der Timer abgelaufen ist
+                    
+                    // navigate to the next view
                     .navigationDestination(isPresented: $isFinished) {
-                        EndView(usedWords: usedWords, correctIndices: correctIndices)            }
+                        EndView(selectedCategory: selectedCategory, usedWords: usedWords, correctIndices: correctIndices)
+                    }
+                    .navigationDestination(isPresented: $goToMainMenu) {
+                        LandscapeDashboardView()
+                    }
+                    
+                    .toolbar {
+                        // go back to home menu
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button {
+                                goToMainMenu = true
+                            } label: {
+                                Image(systemName: "house.fill")
+                                    .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                            }
+                        }
+                        // display category
+                        ToolbarItem(placement: .principal) {
+                            Text(selectedCategory.title)
+                                .font(.headline)
+                                .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                        }
+                        // pause button
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button {
+                                
+                            } label: {
+                                Image(systemName: "pause.fill")
+                                    .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                            }
+                        }
+                    }
                 }
-                .navigationBarBackButtonHidden(false) // Verhindert Zurückgehen, falls nicht gewünscht
+                .navigationBarBackButtonHidden(true)
             }
-        
     }
     
     
@@ -202,41 +237,95 @@ struct GameView: View {
 }
 
 struct EndView: View {
+    let selectedCategory: Category
     let usedWords: [String]
     let correctIndices: [Int]
     
     @State private var countCorrect = 0
     @State private var countAll = 0
     
+    @State private var isFinished = false
+    @State private var goToMainMenu = false
+    @State private var repeatGame = false
+    
+    @State private var backgroundColor: Color? = nil
+    
     var body: some View {
-        VStack {
-            Text("Zeit abgelaufen!")
-                .font(.largeTitle)
-                .bold()
-                .padding(.top)
-            Text("\(countCorrect) / \(countAll) Wörter richtig!")
-            
-            List(Array(usedWords.enumerated()), id: \.offset) { index, word in
-                HStack {
-                    Text(word)
-                        .font(.body)
-                    
-                    Spacer()
-                    
-                    // Display status based on tilt direction/index
-                    if correctIndices.indices.contains(index) {
-                        Image(systemName: correctIndices[index] == 1 ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundStyle(correctIndices[index] == 1 ? .green : .red)
+        backgroundColor
+            .ignoresSafeArea()
+            .overlay {
+                ZStack {
+                    VStack {
+                        Text("Zeit abgelaufen!")
+                            .font(.largeTitle)
+                            .bold()
+                            .padding(.top)
+                        Text("\(countCorrect) / \(countAll) Wörter richtig!")
+                        
+                        List(Array(usedWords.enumerated()), id: \.offset) { index, word in
+                            HStack {
+                                Text(word)
+                                    .font(.body)
+                                
+                                Spacer()
+                                
+                                // Display status based on tilt direction/index
+                                if correctIndices.indices.contains(index) {
+                                    Image(systemName: correctIndices[index] == 1 ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                        .foregroundStyle(correctIndices[index] == 1 ? .green : .red)
+                                }
+                            }
+                            .listRowBackground(Color.clear)
+                        }
+                        .listStyle(.plain)
+                        .scrollContentBackground(.hidden)
+                    }
+                    .onAppear() {
+                        countCorrectWords()
+                        countAll = usedWords.count
+                        backgroundColor = selectedCategory.color
+                    }
+                    .navigationBarBackButtonHidden(false)
+                }
+                // navigate to the next view
+                .navigationDestination(isPresented: $isFinished) {
+                    EndView(selectedCategory: selectedCategory, usedWords: usedWords, correctIndices: correctIndices)
+                }
+                .navigationDestination(isPresented: $goToMainMenu) {
+                    LandscapeDashboardView()
+                }
+                .navigationDestination(isPresented: $repeatGame) {
+                    TimerView(selectedCategory: selectedCategory)
+                }
+                
+                .toolbar {
+                    // go to main menu
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button {
+                            goToMainMenu = true
+                        } label: {
+                            Image(systemName: "house.fill")
+                                .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                        }
+                    }
+                    // display category
+                    ToolbarItem(placement: .principal) {
+                        Text(selectedCategory.title)
+                            .font(.headline)
+                            .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                    }
+                    // repeat with the same category
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button {
+                            repeatGame = true
+                        } label: {
+                            Image(systemName: "repeat")
+                                .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                        }
                     }
                 }
+                .navigationBarBackButtonHidden(true)
             }
-            .listStyle(.plain) // Optional: changes the visual style of the list
-        }
-        .onAppear() {
-            countCorrectWords()
-            countAll = usedWords.count
-        }
-        .navigationBarBackButtonHidden(false) // Verhindert Zurückgehen, falls nicht gewünscht
     }
     
     private func countCorrectWords() {
@@ -248,5 +337,3 @@ struct EndView: View {
         print(correctIndices)
     }
 }
-
-

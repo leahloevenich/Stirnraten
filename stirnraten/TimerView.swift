@@ -14,6 +14,8 @@ struct TimerView: View {
     @State private var timeRemaining = 3 //sekunden
     @State private var isFinished = false
     
+    @State private var backgroundColor: Color? = nil
+    
     // Timer initialisieren, der jede Sekunde feuert
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -59,7 +61,7 @@ struct TimerView: View {
                         GameView(selectedCategory: selectedCategory)
                     }
                 }
-                .navigationBarBackButtonHidden(false) // Verhindert Zurückgehen, falls nicht gewünscht
+                .navigationBarBackButtonHidden(true) // Verhindert Zurückgehen, falls nicht gewünscht
             }
     }
     

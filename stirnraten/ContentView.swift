@@ -44,6 +44,7 @@ struct LandscapeDashboardView: View {
                         }
                     }
                 }
+                .navigationBarBackButtonHidden(true)
             } else {
                 // ==========================================
                 // HOCHFORMAT-LAYOUT (Fallback)

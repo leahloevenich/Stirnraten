@@ -12,11 +12,23 @@ struct Category: Identifiable, Codable {
     let id: String
     let title: String
     let colorHex: String
+    let text: String
     let terms: [String] // Die Begriffe zum Erraten
     
     // Wandelt den Hex-Code aus der JSON in eine SwiftUI-Farbe um
     var color: Color {
         Color(hex: colorHex) ?? .blue
+    }
+    
+    // Text color logic: checks hex first, then named strings, falls back to black
+    var colorText: Color {
+        if text.lowercased() == "white" {
+            return .white
+        } else if text.lowercased() == "black" {
+            return .black
+        } else {
+            return Color(hex: text) ?? .black
+        }
     }
 }
 
