@@ -8,7 +8,7 @@
 import SwiftUI
 
 // 1. Das Datenmodell (Codable macht das Parsen von JSON extrem einfach)
-struct Category: Identifiable, Codable {
+struct Category: Identifiable, Codable, Equatable {
     let id: String
     let title: String
     let colorHex: String

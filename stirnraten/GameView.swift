@@ -11,8 +11,13 @@ import Combine
 import CoreMotion
 
 struct GameView: View {
-    let selectedCategory: Category
-    @State private var timeRemaining = 90 // in Sekunden
+    let selectedCategory: [Category]
+    let randomCatForDisplay: Int
+    
+    @State private var currentCat = 0
+    @State private var timerTime = 90 // in Sekunden
+    @State private var timeRemaining = 90
+    @State private var timePassed = 0
     @State private var isFinished = false
     
     // word to display
@@ -20,6 +25,8 @@ struct GameView: View {
     
     // Timer initialisieren, der jede Sekunde feuert
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    
+    @State private var isBreakActive: Bool = false
     
     // Schwellenwert für das Kippen (ca. 25-30 Grad Neigung)
     private let tiltThreshold: Double = 0.69
@@ -55,16 +62,16 @@ struct GameView: View {
                         VStack(spacing: 30) {
                             Text("Verbleibende Zeit")
                                 .font(.headline)
-                                .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                                .foregroundStyle(selectedCategory[randomCatForDisplay].color.contrastingTextColor())
                             
                             Text(timeString(from: timeRemaining))
                                 .font(.system(size: 60, weight: .bold, design: .monospaced))
                                 .contentTransition(.numericText())
-                                .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                                .foregroundStyle(selectedCategory[randomCatForDisplay].color.contrastingTextColor())
                             
                             Text(currentWord)
                                 .font(.largeTitle)
-                                .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                                .foregroundStyle(selectedCategory[randomCatForDisplay].color.contrastingTextColor())
                         }
                         .padding()
                         
@@ -74,7 +81,7 @@ struct GameView: View {
                         }
                     }
                     .onAppear() {
-                        backgroundColor = selectedCategory.color.opacity(1)
+                        backgroundColor = selectedCategory[randomCatForDisplay].color.opacity(1)
                         UINotificationFeedbackGenerator().notificationOccurred(.warning)
                         if (currentWord.isEmpty) {
                             randomWord()
@@ -83,10 +90,13 @@ struct GameView: View {
                     }
                     // Empfange das Timer-Signal jede Sekunde
                     .onReceive(timer) { _ in
-                        if timeRemaining > 0 {
-                            timeRemaining -= 1
-                        } else {
-                            isFinished = true
+                        if (!isBreakActive) {
+                            timeRemaining = timerTime - timePassed
+                            if timeRemaining > 0 {
+                                timePassed += 1
+                            } else {
+                                isFinished = true
+                            }
                         }
                     }
                     .onDisappear() {
@@ -96,7 +106,7 @@ struct GameView: View {
                     
                     // navigate to the next view
                     .navigationDestination(isPresented: $isFinished) {
-                        EndView(selectedCategory: selectedCategory, usedWords: usedWords, correctIndices: correctIndices)
+                        EndView(selectedCategory: selectedCategory, randomCatForDisplay: randomCatForDisplay, usedWords: usedWords, correctIndices: correctIndices)
                     }
                     .navigationDestination(isPresented: $goToMainMenu) {
                         LandscapeDashboardView()
@@ -109,25 +119,51 @@ struct GameView: View {
                                 goToMainMenu = true
                             } label: {
                                 Image(systemName: "house.fill")
-                                    .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                                    .foregroundStyle(selectedCategory[randomCatForDisplay].color.contrastingTextColor())
                             }
                         }
                         // display category
                         ToolbarItem(placement: .principal) {
-                            Text(selectedCategory.title)
+                            Text(selectedCategory[currentCat].title)
                                 .font(.headline)
-                                .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                                .foregroundStyle(selectedCategory[randomCatForDisplay].color.contrastingTextColor())
                         }
                         // pause button
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button {
-                                
+                                isBreakActive = true
                             } label: {
                                 Image(systemName: "pause.fill")
-                                    .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                                    .foregroundStyle(selectedCategory[randomCatForDisplay].color.contrastingTextColor())
                             }
                         }
                     }
+                    .fullScreenCover(isPresented: $isBreakActive) {
+                        ZStack {
+                            Color.black.opacity(0.4).ignoresSafeArea()
+                            
+                            VStack(spacing: 20) {
+                                Text("! Spiel pausiert !")
+                                    .font(.headline)
+                                Text("Das Spiel wurde pausiert. Drücke 'Fortsetzen' um fortzufahren.")
+                                    .multilineTextAlignment(.center)
+                                
+                                Button("Fortsetzen") {
+                                    isBreakActive = false
+                                }
+                                .padding()
+                                .background(selectedCategory[randomCatForDisplay].color)
+                                .foregroundColor(selectedCategory[randomCatForDisplay].color.contrastingTextColor())
+                                .cornerRadius(8)
+                            }
+                            .padding()
+                            .background(Color(.systemBackground))
+                            .cornerRadius(50)
+                            .padding(40)
+                        }
+                        .background(selectedCategory[randomCatForDisplay].color.opacity(1)) // Optional: removes default opaque sheet background if needed
+                    }
+
                 }
                 .navigationBarBackButtonHidden(true)
             }
@@ -143,10 +179,15 @@ struct GameView: View {
     
     // Hilfsfunktion die ein random Wort holt
     private func randomWord() {
-        let available = selectedCategory.terms.filter { !usedWords.contains($0) }
+        // first, get random Category
+        currentCat = Int.random(in: 0...selectedCategory.count - 1)
+        
+        // then, choose word
+        let available = selectedCategory[currentCat].terms.filter { !usedWords.contains($0) }
         guard let word = available.randomElement() else {
-            // z. B. Runde beenden, usedWords zurücksetzen, oder ähnliches
-            return
+            // neues word ziehen
+            randomWord()
+            return 
         }
         currentWord = word
         usedWords.append(word)
@@ -237,7 +278,8 @@ struct GameView: View {
 }
 
 struct EndView: View {
-    let selectedCategory: Category
+    let selectedCategory: [Category]
+    let randomCatForDisplay: Int
     let usedWords: [String]
     let correctIndices: [Int]
     
@@ -260,12 +302,15 @@ struct EndView: View {
                             .font(.largeTitle)
                             .bold()
                             .padding(.top)
+                            .foregroundStyle(selectedCategory[randomCatForDisplay].color.contrastingTextColor())
                         Text("\(countCorrect) / \(countAll) Wörter richtig!")
+                            .foregroundStyle(selectedCategory[randomCatForDisplay].color.contrastingTextColor())
                         
                         List(Array(usedWords.enumerated()), id: \.offset) { index, word in
                             HStack {
                                 Text(word)
                                     .font(.body)
+                                    .foregroundStyle(selectedCategory[randomCatForDisplay].color.contrastingTextColor())
                                 
                                 Spacer()
                                 
@@ -283,19 +328,19 @@ struct EndView: View {
                     .onAppear() {
                         countCorrectWords()
                         countAll = usedWords.count
-                        backgroundColor = selectedCategory.color
+                        backgroundColor = selectedCategory[randomCatForDisplay].color
                     }
                     .navigationBarBackButtonHidden(false)
                 }
                 // navigate to the next view
                 .navigationDestination(isPresented: $isFinished) {
-                    EndView(selectedCategory: selectedCategory, usedWords: usedWords, correctIndices: correctIndices)
+                    EndView(selectedCategory: selectedCategory, randomCatForDisplay: randomCatForDisplay, usedWords: usedWords, correctIndices: correctIndices)
                 }
                 .navigationDestination(isPresented: $goToMainMenu) {
                     LandscapeDashboardView()
                 }
                 .navigationDestination(isPresented: $repeatGame) {
-                    TimerView(selectedCategory: selectedCategory)
+                    TimerView(selectedCategory: selectedCategory, randomCatForDisplay: randomCatForDisplay)
                 }
                 
                 .toolbar {
@@ -305,14 +350,14 @@ struct EndView: View {
                             goToMainMenu = true
                         } label: {
                             Image(systemName: "house.fill")
-                                .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                                .foregroundStyle(selectedCategory[randomCatForDisplay].color.contrastingTextColor())
                         }
                     }
                     // display category
                     ToolbarItem(placement: .principal) {
-                        Text(selectedCategory.title)
+                        Text((selectedCategory.count > 1) ? "Multiselect" : selectedCategory[0].title)
                             .font(.headline)
-                            .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                            .foregroundStyle(selectedCategory[randomCatForDisplay].color.contrastingTextColor())
                     }
                     // repeat with the same category
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -320,7 +365,7 @@ struct EndView: View {
                             repeatGame = true
                         } label: {
                             Image(systemName: "repeat")
-                                .foregroundStyle(selectedCategory.color.contrastingTextColor())
+                                .foregroundStyle(selectedCategory[randomCatForDisplay].color.contrastingTextColor())
                         }
                     }
                 }

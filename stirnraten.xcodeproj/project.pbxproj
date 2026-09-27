@@ -7,13 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		54E8418F3023CCA80025C4B1 /* Terms 2.json in Sources */ = {isa = PBXBuildFile; fileRef = 54E8418D3023CC990025C4B1 /* Terms 2.json */; };
 		54E841933023CCF30025C4B1 /* terms.json in Resources */ = {isa = PBXBuildFile; fileRef = 54E841923023CCF30025C4B1 /* terms.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		54D9712130236CEE003C946A /* stirnraten.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = stirnraten.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		54E8418D3023CC990025C4B1 /* Terms 2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Terms 2.json"; sourceTree = "<group>"; };
 		54E841923023CCF30025C4B1 /* terms.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = terms.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -39,7 +37,6 @@
 		54D9711830236CEE003C946A = {
 			isa = PBXGroup;
 			children = (
-				54E8418D3023CC990025C4B1 /* Terms 2.json */,
 				54E841923023CCF30025C4B1 /* terms.json */,
 				54D9712330236CEE003C946A /* stirnraten */,
 				54D9712230236CEE003C946A /* Products */,
@@ -129,7 +126,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				54E8418F3023CCA80025C4B1 /* Terms 2.json in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

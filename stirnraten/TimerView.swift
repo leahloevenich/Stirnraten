@@ -9,7 +9,8 @@ import SwiftUI
 import Combine
 
 struct TimerView: View {
-    let selectedCategory: Category
+    let selectedCategory: [Category]
+    let randomCatForDisplay: Int
     @State private var contrastingColor: Color = .black
     @State private var timeRemaining = 3 //sekunden
     @State private var isFinished = false
@@ -20,7 +21,7 @@ struct TimerView: View {
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        selectedCategory.color.opacity(1)
+        selectedCategory[randomCatForDisplay].color.opacity(1)
             .ignoresSafeArea()
             .overlay {
                 NavigationStack {
@@ -35,7 +36,7 @@ struct TimerView: View {
                                 .contentTransition(.numericText())
                                 .foregroundStyle(contrastingColor)
                             
-                            Text(selectedCategory.title)
+                            Text((selectedCategory.count == 1) ? selectedCategory[0].title : "Multiselect")
                                 .font(.largeTitle)
                                 .foregroundStyle(contrastingColor)
                         }
@@ -44,7 +45,7 @@ struct TimerView: View {
                     .padding()
                     
                     .onAppear() {
-                        contrastingColor = selectedCategory.color.contrastingTextColor()
+                        contrastingColor = selectedCategory[randomCatForDisplay].color.contrastingTextColor()
                     }
                     
                     // Empfange das Timer-Signal jede Sekunde
@@ -58,7 +59,7 @@ struct TimerView: View {
                     
                     // Navigation zur neuen View, sobald der Timer abgelaufen ist
                     .navigationDestination(isPresented: $isFinished) {
-                        GameView(selectedCategory: selectedCategory)
+                        GameView(selectedCategory: selectedCategory, randomCatForDisplay: randomCatForDisplay)
                     }
                 }
                 .navigationBarBackButtonHidden(true) // Verhindert Zurückgehen, falls nicht gewünscht
