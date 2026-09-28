@@ -11,11 +11,16 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		54D9712130236CEE003C946A /* stirnraten.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = stirnraten.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		54D9712130236CEE003C946A /* Stabu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Stabu.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		54E841923023CCF30025C4B1 /* terms.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = terms.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		54938EE63069867D0052DEEC /* images */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = images;
+			sourceTree = "<group>";
+		};
 		54D9712330236CEE003C946A /* stirnraten */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = stirnraten;
@@ -37,6 +42,7 @@
 		54D9711830236CEE003C946A = {
 			isa = PBXGroup;
 			children = (
+				54938EE63069867D0052DEEC /* images */,
 				54E841923023CCF30025C4B1 /* terms.json */,
 				54D9712330236CEE003C946A /* stirnraten */,
 				54D9712230236CEE003C946A /* Products */,
@@ -46,7 +52,7 @@
 		54D9712230236CEE003C946A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				54D9712130236CEE003C946A /* stirnraten.app */,
+				54D9712130236CEE003C946A /* Stabu.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -67,13 +73,14 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				54938EE63069867D0052DEEC /* images */,
 				54D9712330236CEE003C946A /* stirnraten */,
 			);
 			name = stirnraten;
 			packageProductDependencies = (
 			);
 			productName = stirnraten;
-			productReference = 54D9712130236CEE003C946A /* stirnraten.app */;
+			productReference = 54D9712130236CEE003C946A /* Stabu.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -275,7 +282,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 26.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = leah.stirnraten;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Stabu;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -320,7 +327,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 26.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = leah.stirnraten;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Stabu;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

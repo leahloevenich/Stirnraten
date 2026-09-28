@@ -15,12 +15,15 @@ struct LandscapeDashboardView: View {
     @Environment(\.verticalSizeClass) var verticalSizeClass
 
     let categories = CategoryManager.shared.categories
-    @State private var isMulitselectActive: Bool = false
+    @State private var isMultiselectActive: Bool = false
     @State private var selectedCategory: [Category] = []
     @State private var randomCatForDisplay: Int = 0
     
     @State private var navigateToTimer: Bool = false
     @State private var showingAlert: Bool = false
+    
+    // just for fun
+    @State private var showConfetti = false
 
     var body: some View {
         Group {
@@ -32,12 +35,13 @@ struct LandscapeDashboardView: View {
                             // Adaptive Spalten: Passt so viele Karten wie möglich nebeneinander
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 16)], spacing: 16) {
                                 ForEach(categories) { category in
-                                    if (isMulitselectActive) {
+                                    if (isMultiselectActive) {
                                         Button {
                                             if (selectedCategory.contains(where: { $0 == category })) {
                                                 // deselect
                                                 selectedCategory.removeAll(where: { $0 == category })
                                             } else {
+                                                // select
                                                 selectedCategory.append(category)
                                             }
                                         } label: {
@@ -46,8 +50,9 @@ struct LandscapeDashboardView: View {
                                         }
                                         .buttonStyle(.plain)
                                     } else {
-                                        // no multiselect: choose one and start
+                                        // no multiselect: choose one and start instant
                                         Button {
+                                            selectedCategory.removeAll()
                                             selectedCategory.append(category)
                                             startGame()
                                         } label: {
@@ -61,61 +66,92 @@ struct LandscapeDashboardView: View {
                             .padding(.horizontal)
                             .padding(.bottom)
                         }
+                        .scrollEdgeEffectHidden(true, for: .top)   // removes the blur/fade under the toolbar
+                    }
+                    .overlay {
+                        if showConfetti {
+                            ConfettiView()
+                        }
                     }
                     .toolbar {
-                        // multiselect on and off
-                        ToolbarItem(placement: .topBarLeading) {
+                        // multiselect buttons
+                        ToolbarItemGroup(placement: .topBarLeading) {
+                            // multiselect on and off
                             Button {
-                                isMulitselectActive.toggle()
+                                isMultiselectActive.toggle()
+                                selectedCategory.removeAll()
                             } label: {
                                 Label(
-                                    isMulitselectActive ? "Multiselect ON" : "Multiselect OFF",
-                                    systemImage: isMulitselectActive ? "checklist.checked" : "checklist"
+                                    isMultiselectActive ? "Multiselect ON" : "Multiselect OFF",
+                                    systemImage: isMultiselectActive ? "square.grid.2x2.fill" : "square.grid.2x2"
                                 )
-                                .labelStyle(.titleOnly)
+                                .labelStyle(.iconOnly)
+                            }
+                            
+                            if (isMultiselectActive) {
+                                // select all and deselect all
+                                Button {
+                                    if (selectedCategory.isEmpty) {
+                                        // select all
+                                        selectedCategory = categories
+                                    } else {
+                                        // deselect all
+                                        selectedCategory.removeAll()
+                                    }
+                                } label: {
+                                    Label(
+                                        selectedCategory.isEmpty ? "Select All" : "Deselect All",
+                                        systemImage:
+                                            selectedCategory.isEmpty ? "checkmark.square.fill" : "checkmark.square")
+                                }
+                                .labelStyle(.iconOnly)
+
+                                // start game
+                                Button {
+                                    // Action for third button
+                                    startGame()
+                                } label: {
+                                    Label("Start Game", systemImage: "play.circle.fill")
+                                }
+                                .labelStyle(.iconOnly)
                             }
                         }
-                        // play all or multiselect start
+                        // keine ahnung was ich daraus machen soll
                         ToolbarItem(placement: .topBarTrailing) {
                             // 2. Custom Toggle Button
                             Button {
-                                if (isMulitselectActive) {
-                                    if (selectedCategory.count == 0) {
-                                        showingAlert = true
-                                    } else {
-                                        startGame()
-                                    }
-                                } else {
-                                    selectedCategory = categories
+                                addRandomCat()
+                                if (!isMultiselectActive) {
                                     startGame()
                                 }
                             } label: {
                                 Label(
-                                    isMulitselectActive ? "Start Game" : "Select all",
-                                    systemImage: isMulitselectActive ? "checklist.checked" : "bolt.fill"
+                                    "Random",
+                                    systemImage: "shuffle"
                                 )
-                                .labelStyle(.titleOnly)
+                                .labelStyle(.iconOnly)
                             }
                         }
                         ToolbarItem(placement: .principal) {
-                            Text("Wähle eine Kategorie")
-                                .font(.title)
-                                .bold()
-                                .padding(.top, 8)
+                            Button {
+                                showConfetti = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 3.8) { showConfetti = false }
+                            } label: {
+                                Text("Wähle eine Kategorie")
+                                    .font(.title)
+                                    .bold()
+                                    .padding(.horizontal, 10)
+                            }
+                            .buttonStyle(.glass)
                         }
-                        
+                        .sharedBackgroundVisibility(.hidden)
                     }
+                    
                     .alert(isPresented: $showingAlert) {
                         Alert(
                             title: Text("! STOP !"),
                             message: Text("Wähle mindestens eine Kategorie!"),
-                            primaryButton: .default(
-                                Text("Select random"),
-                                action: startGameRandom
-                            ),
-                            secondaryButton: .default(
-                                Text("Return")
-                            )
+                            dismissButton: .default(Text("Return"))
                         )
                     }
                     .navigationDestination(isPresented: $navigateToTimer) {
@@ -149,15 +185,23 @@ struct LandscapeDashboardView: View {
     
     // Hilfsfunktion zum Starten des Games
     private func startGame() {
-        randomCatForDisplay = (Int.random(in: 0...selectedCategory.count - 1))
-        navigateToTimer = true
+        if (selectedCategory.count == 0) {
+            showingAlert = true
+        } else {
+            randomCatForDisplay = (Int.random(in: 0..<selectedCategory.count))
+            navigateToTimer = true
+        }
     }
     
     // Hilfsfunktion zum Starten des Games mit random category
-    private func startGameRandom() {
-        let temp = (Int.random(in: 0...categories.count - 1))
-        selectedCategory.append(categories[temp])
-        navigateToTimer = true
+    private func addRandomCat() {
+        if (selectedCategory.count == categories.count) {return}
+        
+        let available = categories.filter { !selectedCategory.contains($0) }
+        guard let catToAdd = available.randomElement() else {
+            return
+        }
+        selectedCategory.append(catToAdd)
     }
 }
 
